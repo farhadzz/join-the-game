@@ -9,13 +9,14 @@ type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K>
 /** What the scorekeeper decides; ids, ordering and authorship are filled in on save. */
 export type EventDraft = DistributiveOmit<
   MatchEvent,
-  'id' | 'matchId' | 'seq' | 'recordedAt' | 'recordedBy' | 'receivedAt'
+  'id' | 'matchId' | 'seq' | 'deviceId' | 'recordedAt' | 'recordedBy' | 'receivedAt'
 >;
 
 type EventRow = {
   id: string;
   match_id: string;
   seq: number;
+  device_id: string;
   type: string;
   period: number;
   clock_ms: number | null;
@@ -29,6 +30,7 @@ const toEvent = (row: EventRow): MatchEvent =>
     id: row.id,
     matchId: row.match_id,
     seq: row.seq,
+    deviceId: row.device_id,
     type: row.type,
     period: row.period,
     clockMs: row.clock_ms,
@@ -53,7 +55,7 @@ export async function appendEvent(
   db: SQLiteDatabase,
   match: LocalMatch,
   draft: EventDraft,
-  recordedBy: string,
+  device: { deviceId: string; recordedBy: string },
 ): Promise<MatchEvent> {
   const last = await db.getFirstAsync<{ seq: number | null }>(
     'SELECT MAX(seq) AS seq FROM match_events WHERE match_id = ?',
@@ -70,16 +72,18 @@ export async function appendEvent(
     id: randomUUID(),
     matchId: match.id,
     seq: (last?.seq ?? 0) + 1,
+    deviceId: device.deviceId,
     recordedAt: new Date().toISOString(),
-    recordedBy,
+    recordedBy: device.recordedBy,
   });
 
   await db.runAsync(
-    `INSERT INTO match_events (id, match_id, seq, type, period, clock_ms, recorded_at, recorded_by, payload)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO match_events (id, match_id, seq, device_id, type, period, clock_ms, recorded_at, recorded_by, payload)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     event.id,
     event.matchId,
     event.seq,
+    event.deviceId,
     event.type,
     event.period,
     event.clockMs,

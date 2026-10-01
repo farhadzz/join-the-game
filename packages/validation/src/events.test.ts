@@ -16,6 +16,7 @@ const base = {
   id: uuid(4),
   matchId: context.matchId,
   seq: 1,
+  deviceId: uuid(9),
   period: 1,
   clockMs: 1_000,
   recordedAt: '2026-01-01T10:00:00.000Z',
@@ -71,6 +72,7 @@ describe('matchEventSchema', () => {
 
   it.each([
     ['id', 'not-a-uuid'],
+    ['deviceId', 'phone-1'],
     ['seq', 0],
     ['seq', 1.5],
     ['period', 0],

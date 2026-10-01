@@ -14,6 +14,27 @@ describe('activeEvents', () => {
     expect(activeEvents([...events].reverse()).map((e) => e.seq)).toEqual([1, 2]);
   });
 
+  it('breaks seq ties by deviceId so every device derives the same order', () => {
+    const events = eventLog([
+      {
+        type: 'score',
+        id: 'from-b',
+        seq: 1,
+        deviceId: 'b',
+        payload: { teamId: 'home', points: 1 },
+      },
+      {
+        type: 'score',
+        id: 'from-a',
+        seq: 1,
+        deviceId: 'a',
+        payload: { teamId: 'away', points: 1 },
+      },
+    ]);
+    expect(activeEvents(events).map((e) => e.id)).toEqual(['from-a', 'from-b']);
+    expect(activeEvents([...events].reverse()).map((e) => e.id)).toEqual(['from-a', 'from-b']);
+  });
+
   it('drops duplicate events with the same id', () => {
     const events = eventLog([{ type: 'match_started' }]);
     expect(activeEvents([...events, ...events])).toHaveLength(1);

@@ -1,13 +1,13 @@
 import { randomUUID } from 'expo-crypto';
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-const KEY = 'device_user_id';
+const KEY = 'device_id';
 
 /**
- * Stable id used as `recordedBy` until sign-in exists; it will be replaced
- * by the Supabase user id.
+ * Stable id for this installation, stored on every event it records.
+ * Until sign-in exists it also stands in for the user as `recordedBy`.
  */
-export async function getDeviceUserId(db: SQLiteDatabase): Promise<string> {
+export async function getDeviceId(db: SQLiteDatabase): Promise<string> {
   const row = await db.getFirstAsync<{ value: string }>(
     'SELECT value FROM settings WHERE key = ?',
     KEY,

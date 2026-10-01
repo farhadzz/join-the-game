@@ -1,11 +1,11 @@
 import { deriveMatchState, type MatchEvent } from '@join-the-game/core';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { getDeviceUserId } from '@/db/device';
+import { getDeviceId } from '@/db/device';
 import { appendEvent, listEvents, type EventDraft } from '@/db/events';
 import { getMatch, type LocalMatch } from '@/db/matches';
 
-type Loaded = { match: LocalMatch; events: MatchEvent[]; userId: string };
+type Loaded = { match: LocalMatch; events: MatchEvent[]; deviceId: string };
 
 export type UseMatchResult =
   | { status: 'loading' }
@@ -31,8 +31,8 @@ export function useMatch(matchId: string): UseMatchResult {
     (async () => {
       const match = await getMatch(db, matchId);
       if (!match) return null;
-      const [events, userId] = await Promise.all([listEvents(db, matchId), getDeviceUserId(db)]);
-      return { match, events, userId };
+      const [events, deviceId] = await Promise.all([listEvents(db, matchId), getDeviceId(db)]);
+      return { match, events, deviceId };
     })().then(
       (result) => !cancelled && setLoaded(result),
       (error: unknown) => !cancelled && setLoadError(toError(error)),
@@ -47,7 +47,11 @@ export function useMatch(matchId: string): UseMatchResult {
       if (!loaded) return Promise.resolve();
       const run = queue.current.then(async () => {
         for (const draft of drafts) {
-          const event = await appendEvent(db, loaded.match, draft, loaded.userId);
+          // No sign-in yet, so the device id also stands in for the user.
+          const event = await appendEvent(db, loaded.match, draft, {
+            deviceId: loaded.deviceId,
+            recordedBy: loaded.deviceId,
+          });
           setLoaded((current) => current && { ...current, events: [...current.events, event] });
         }
         setRecordError(null);

@@ -35,6 +35,16 @@ const migrations = [
 
   CREATE INDEX match_events_pending ON match_events (synced_at) WHERE synced_at IS NULL;
   `,
+  // Events record which installation wrote them. The id that was used as
+  // recorded_by was already per-installation, so it becomes the device id.
+  `
+  UPDATE settings SET key = 'device_id' WHERE key = 'device_user_id';
+
+  ALTER TABLE match_events ADD COLUMN device_id TEXT NOT NULL DEFAULT '';
+
+  UPDATE match_events
+  SET device_id = COALESCE((SELECT value FROM settings WHERE key = 'device_id'), recorded_by);
+  `,
 ];
 
 export async function migrate(db: SQLiteDatabase): Promise<void> {

@@ -10,6 +10,8 @@ type EventBase<TType extends string, TPayload> = {
   matchId: string;
   /** Per-match counter. The only source of truth for ordering (device clocks drift). */
   seq: number;
+  /** Installation that recorded the event; breaks `seq` ties once several devices can write. */
+  deviceId: string;
   type: TType;
   period: number;
   /** Elapsed game clock within the period, in ms. */
@@ -53,7 +55,9 @@ export type EventType = MatchEvent['type'];
 export function activeEvents(events: readonly MatchEvent[]): MatchEvent[] {
   const unique = new Map<string, MatchEvent>();
   for (const event of events) unique.set(event.id, event);
-  const ordered = [...unique.values()].sort((a, b) => a.seq - b.seq);
+  const ordered = [...unique.values()].sort(
+    (a, b) => a.seq - b.seq || (a.deviceId < b.deviceId ? -1 : a.deviceId > b.deviceId ? 1 : 0),
+  );
 
   // A void always targets an earlier event, so walking backwards resolves
   // chains (void of a void) in a single pass.

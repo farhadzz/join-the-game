@@ -7,6 +7,7 @@ const base = {
   id: z.uuid(),
   matchId: z.uuid(),
   seq: z.int().positive(),
+  deviceId: z.uuid(),
   period: z.int().positive(),
   clockMs: z.int().nonnegative().nullable(),
   recordedAt: timestamp,
