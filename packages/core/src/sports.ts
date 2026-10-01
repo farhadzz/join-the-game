@@ -12,6 +12,8 @@ export type SportConfig = {
   drawsAllowed: boolean;
   /** Regulation periods; amateur competitions may later override these. */
   periods: { count: number; label: string; durationMs: number; overtimeDurationMs: number };
+  /** Whether a drawn knockout match can be decided by a shootout. */
+  shootouts: boolean;
   /** Football shows elapsed time; basketball counts down. */
   clockDirection: 'up' | 'down';
   standings: StandingsRules;
@@ -26,6 +28,7 @@ export const sports: Record<SportId, SportConfig> = {
     foulKinds: ['yellow', 'red'],
     drawsAllowed: true,
     periods: { count: 2, label: 'Half', durationMs: minutes(45), overtimeDurationMs: minutes(15) },
+    shootouts: true,
     clockDirection: 'up',
     standings: {
       points: { win: 3, draw: 1, loss: 0 },
@@ -43,6 +46,7 @@ export const sports: Record<SportId, SportConfig> = {
       durationMs: minutes(10),
       overtimeDurationMs: minutes(5),
     },
+    shootouts: false,
     clockDirection: 'down',
     // FIBA: 2 points for a win, 1 for a loss, head-to-head first.
     standings: {
