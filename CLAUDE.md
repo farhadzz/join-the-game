@@ -23,7 +23,7 @@ Not trying to compete feature-for-feature with Challonge/Toornament.
 
 ### Later (v2)
 
-Web organizer dashboard, player stats & leaderboards, double elimination, push notifications,
+Web organizer dashboard, multiple simultaneous scorekeepers, player stats & leaderboards, double elimination, push notifications,
 home-screen widget for live score, pluggable sport-specific rules.
 
 ### Roles
@@ -54,6 +54,7 @@ type MatchEvent = {
   id: string;             // client-generated UUID (idempotent sync)
   matchId: string;
   seq: number;            // per-match counter; the source of truth for ordering
+  deviceId: string;       // installation that recorded it (enables multi-writer later)
   type: EventType;
   period: number;
   clockMs: number | null; // game clock at time of event
@@ -77,11 +78,24 @@ type MatchEvent = {
 
 Rules:
 
-- Order by `seq`, never by timestamps.
+- Order by `seq`, never by timestamps. Ties (only possible with several writers) break by `deviceId`.
 - Score = sum of non-voided `score` events in non-shootout periods.
 - Shootout scores are tallied separately and only decide the winner of a drawn knockout match.
 - MVP tracks teams only; `playerId` is optional so v2 player stats need no migration.
 - Sport-specific validation (allowed points, foul kinds) lives in Zod schemas in `packages/validation`.
+
+## Scorekeeping control (decided)
+
+- MVP: **one active scorekeeper per match**. Only that device records events, so `seq`
+  never conflicts, even offline.
+- Organizers/co-organizers can **take over** scoring (dead battery, half-time handoff);
+  the match is locked to one device at a time.
+- Everyone else (organizers, spectators) watches live; read-only.
+- Every event carries `deviceId` now, so several simultaneous scorekeepers (v2+) can be
+  added without changing the event format. Multi-writer would also need per-device
+  ordering + merge rules and rules for undoing another device's events.
+- Open (decide in the Supabase step): what happens to events the previous scorekeeper
+  recorded offline but synced only after a takeover.
 
 ## Repo: single monorepo (FE + BE together)
 
