@@ -1,16 +1,19 @@
 # Competition App — Project Context
 
 ## Purpose
+
 Portfolio flagship project for Farhad (frontend/mobile dev: React, TypeScript, React Native).
 Goal: land remote international roles. The app must look and behave like production software,
 and the repo itself is part of the portfolio (clean README, CI, tests, readable commits).
 
 ## Product
+
 Users create and run sports competitions (basketball, football first).
 Angle: amateur leagues / local tournaments, with **live offline-capable scorekeeping** as the standout feature.
 Not trying to compete feature-for-feature with Challonge/Toornament.
 
 ### MVP scope
+
 1. Create a competition: sport, format (knockout or league), teams
 2. Auto-generate fixtures / bracket
 3. Live scorekeeper mode: big buttons, works offline, event log (goal, point, foul, period)
@@ -19,18 +22,22 @@ Not trying to compete feature-for-feature with Challonge/Toornament.
 6. Invite co-organizers / scorekeepers by link
 
 ### Later (v2)
+
 Web organizer dashboard, player stats & leaderboards, double elimination, push notifications,
 home-screen widget for live score, pluggable sport-specific rules.
 
 ### Roles
+
 organizer, scorekeeper/referee, team captain, player, spectator.
 
 ## Key architecture decision
+
 Store **match events** (goal at 12:34, foul, substitution), not just final scores.
 Derive scores, standings, and stats from events. Benefits: easier offline sync,
 free undo, audit trail.
 
 ## App split (decided)
+
 - **Mobile (Expo)**: organizers, scorekeepers, captains, players. Competition setup,
   offline live scorekeeping, invites. Native because offline reliability matters
   (SQLite, keep-awake, haptics; mobile Safari can evict IndexedDB).
@@ -39,7 +46,9 @@ free undo, audit trail.
 - Web organizer dashboard deferred to v2. Both apps share `core`, `validation`, `api`.
 
 ## Match event schema (decided)
+
 Common fields on every event:
+
 ```ts
 type MatchEvent = {
   id: string;             // client-generated UUID (idempotent sync)
@@ -55,18 +64,19 @@ type MatchEvent = {
 };
 ```
 
-| Type | Payload | Notes |
-|---|---|---|
-| `match_started` | — | |
-| `period_started` | `kind: 'regular' \| 'overtime' \| 'shootout'` | |
-| `period_ended` | — | |
-| `clock_started` / `clock_stopped` | — | Game clock is derived from these |
-| `score` | `teamId`, `points`, `playerId?` | Football: 1. Basketball: 1/2/3 |
-| `foul` | `teamId`, `playerId?`, `kind` | personal/technical (basketball), yellow/red (football) |
-| `match_ended` | — | |
-| `void` | `targetEventId` | Undo; events are never deleted |
+| Type                              | Payload                                       | Notes                                                  |
+| --------------------------------- | --------------------------------------------- | ------------------------------------------------------ |
+| `match_started`                   | —                                             |                                                        |
+| `period_started`                  | `kind: 'regular' \| 'overtime' \| 'shootout'` |                                                        |
+| `period_ended`                    | —                                             |                                                        |
+| `clock_started` / `clock_stopped` | —                                             | Game clock is derived from these                       |
+| `score`                           | `teamId`, `points`, `playerId?`               | Football: 1. Basketball: 1/2/3                         |
+| `foul`                            | `teamId`, `playerId?`, `kind`                 | personal/technical (basketball), yellow/red (football) |
+| `match_ended`                     | —                                             |                                                        |
+| `void`                            | `targetEventId`                               | Undo; events are never deleted                         |
 
 Rules:
+
 - Order by `seq`, never by timestamps.
 - Score = sum of non-voided `score` events in non-shootout periods.
 - Shootout scores are tallied separately and only decide the winner of a drawn knockout match.
@@ -74,6 +84,7 @@ Rules:
 - Sport-specific validation (allowed points, foul kinds) lives in Zod schemas in `packages/validation`.
 
 ## Repo: single monorepo (FE + BE together)
+
 ```
 join-the-game/
 ├── apps/
@@ -94,6 +105,7 @@ join-the-game/
 ```
 
 ## Stack
+
 - Turborepo, TypeScript strict everywhere
 - Mobile: Expo + Expo Router, Reanimated, EAS Build/Update
 - Web: Next.js
@@ -109,8 +121,10 @@ join-the-game/
 - Monitoring: Sentry
 
 ## Quality bar
+
 Auth, loading/error/empty states, accessibility labels, dark mode, tests for core logic,
 CI on every PR, descriptive commits, good README with screenshots and architecture notes.
 
 ## Open questions
+
 - None currently.
