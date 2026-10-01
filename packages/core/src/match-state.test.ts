@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { activeEvents } from './events';
-import { clockElapsedMs, deriveMatchState } from './match-state';
+import { clockElapsedMs, deriveMatchState, formatClock } from './match-state';
 import { eventLog } from './test-utils';
 
 const sides = { homeTeamId: 'home', awayTeamId: 'away' };
@@ -222,5 +222,24 @@ describe('game clock', () => {
       ]),
     );
     expect(clock).toEqual({ running: false, elapsedMs: 0, runningSince: null });
+  });
+});
+
+describe('formatClock', () => {
+  it('shows elapsed time when counting up', () => {
+    expect(formatClock(754_900, 2_700_000, 'up')).toBe('12:34');
+  });
+
+  it('shows remaining time when counting down, rounding up partial seconds', () => {
+    expect(formatClock(0, 600_000, 'down')).toBe('10:00');
+    expect(formatClock(59_100, 600_000, 'down')).toBe('09:01');
+  });
+
+  it('stops at zero when counting down past the period length', () => {
+    expect(formatClock(700_000, 600_000, 'down')).toBe('00:00');
+  });
+
+  it('keeps counting past the period length when counting up (added time)', () => {
+    expect(formatClock(2_820_000, 2_700_000, 'up')).toBe('47:00');
   });
 });

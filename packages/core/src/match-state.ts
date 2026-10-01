@@ -130,3 +130,16 @@ function decideWinner(sides: MatchSides, tally: TeamTally): string | null {
   if (tally.away > tally.home) return sides.awayTeamId;
   return null;
 }
+
+/** Clock text as the sport displays it: elapsed for football, remaining for basketball. */
+export function formatClock(
+  elapsedMs: number,
+  periodDurationMs: number,
+  direction: 'up' | 'down',
+): string {
+  const shownMs = direction === 'up' ? elapsedMs : Math.max(0, periodDurationMs - elapsedMs);
+  const totalSeconds = direction === 'up' ? Math.floor(shownMs / 1000) : Math.ceil(shownMs / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+}
