@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createCompetitionSchema } from './competition';
+import { createCompetitionSchema, createFriendlyMatchSchema } from './competition';
 
 const valid = {
   name: 'Sunday League',
@@ -66,5 +66,29 @@ describe('createCompetitionSchema', () => {
     expect(issues({ ...valid, teams: [{ name: 'Rovers' }, { name: '  ' }] })).toEqual([
       ['teams.1.name', 'Team name is required'],
     ]);
+  });
+});
+
+describe('createFriendlyMatchSchema', () => {
+  const friendly = { sport: 'basketball', homeTeamName: ' Rovers ', awayTeamName: 'United' };
+
+  it('accepts two named teams and trims them', () => {
+    expect(createFriendlyMatchSchema.parse(friendly)).toEqual({
+      sport: 'basketball',
+      homeTeamName: 'Rovers',
+      awayTeamName: 'United',
+    });
+  });
+
+  it('rejects the same team on both sides', () => {
+    const result = createFriendlyMatchSchema.safeParse({ ...friendly, awayTeamName: 'rovers' });
+    expect(result.error?.issues.map((i) => [i.path.join('.'), i.message])).toEqual([
+      ['awayTeamName', 'Teams must have different names'],
+    ]);
+  });
+
+  it('requires both team names', () => {
+    const result = createFriendlyMatchSchema.safeParse({ ...friendly, homeTeamName: ' ' });
+    expect(result.error?.issues.map((i) => i.path.join('.'))).toEqual(['homeTeamName']);
   });
 });

@@ -1,10 +1,12 @@
 import type { SportId } from '@join-the-game/core';
 import { z } from 'zod';
 
+const teamName = z.string().trim().min(1, 'Team name is required').max(50);
+
 export const sportIdSchema = z.enum(['football', 'basketball'] satisfies SportId[]);
 
 const teamsSchema = z
-  .array(z.strictObject({ name: z.string().trim().min(1, 'Team name is required').max(50) }))
+  .array(z.strictObject({ name: teamName }))
   .min(2, 'Add at least 2 teams')
   .max(64, 'A competition can have at most 64 teams')
   .superRefine((teams, ctx) => {
@@ -40,3 +42,13 @@ export const createCompetitionSchema = z.discriminatedUnion('format', [
 
 export type CreateCompetitionInput = z.input<typeof createCompetitionSchema>;
 export type CreateCompetition = z.output<typeof createCompetitionSchema>;
+
+/** A one-off match outside any competition. */
+export const createFriendlyMatchSchema = z
+  .strictObject({ sport: sportIdSchema, homeTeamName: teamName, awayTeamName: teamName })
+  .refine(
+    (match) => match.homeTeamName.toLocaleLowerCase() !== match.awayTeamName.toLocaleLowerCase(),
+    { path: ['awayTeamName'], message: 'Teams must have different names' },
+  );
+
+export type CreateFriendlyMatch = z.output<typeof createFriendlyMatchSchema>;
